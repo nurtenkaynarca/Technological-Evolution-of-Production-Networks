@@ -21,8 +21,6 @@ function generateSimulationFiles(t_s, index_targeting, index_innovation, ...
 %   optional inputs     : suppliers used by some, but not all, firms in a category.
 %   proximity           : a number that measures how similar the firms of a
 %                         category are (also called "homogeneity"); see below.
-%   state               : a snapshot of the economy. State 1 is the initial
-%                         economy; state t+1 is the economy at the END of period t.
 %
 % =========================================================================
 % INPUTS
@@ -77,7 +75,7 @@ function generateSimulationFiles(t_s, index_targeting, index_innovation, ...
 %                          themselves become larger as firms enter
 %
 % =========================================================================
-% PRODUCTIVITY FORMULA (eq. 9 of the paper, as implemented here)
+% PRODUCTIVITY FORMULA (eq. 12 of the paper, as implemented here)
 % =========================================================================
 %   log-productivity = (I - lambda_1*A)^(-1) * lam0_v  +  eps
 %   where I is the identity matrix and lam0_v is the vector of basic productivity
