@@ -2,7 +2,7 @@
 
 MATLAB code for the simulations, figures and tables of
 
-> Kaynarca, N. and Mandel, A. *Technological evolution of production networks*. Manuscript under review at the *Journal of Evolutionary Economics*.
+> Kaynarca, N. and Mandel, A. *Technological evolution of production networks*. Manuscript under review.
 
 The model is an agent-based production network formation model grounded in a general equilibrium economy. In each period, one new firm attempts to enter: it targets a category of firms with similar inputs, builds on the category's essential inputs, and searches for additional inputs within the category (Scenario A, local search), or also from any firm (Scenario B, broad search) or from recently entered firms (Scenario C, recent search). Categories are derived endogenously from the production network by a clustering algorithm.
 
