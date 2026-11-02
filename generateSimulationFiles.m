@@ -1,5 +1,5 @@
 function generateSimulationFiles(t_s, index_targeting, index_innovation, ...
-    lambda_0, lambda_0_new,  T_mature, lambda_1, ncp, index_save, index_nc)
+    lambda_0, lambda_0_new,  T_mature, lambda_1, ncp, index_save, index_nc, index_init)
 % GENERATESIMULATIONFILES  Simulates how a network of firms that buy inputs from
 % each other changes over time, when one new firm tries to enter the economy in
 % every period. The results of one simulation run are saved to a .mat file.
@@ -71,8 +71,14 @@ function generateSimulationFiles(t_s, index_targeting, index_innovation, ...
 %                          firms, so the number of categories grows with the
 %                          economy (this is the default if the input is omitted)
 %                      0 = fixed (FNC): the number of categories stays at its
-%                          initial value from i_data_ar.mat, so the categories
+%                          initial value from the initial network, so the categories
 %                          themselves become larger as firms enter
+%   index_init       : initial network (optional; default 0)
+%                      0 = baseline: symmetric categories (i_data_ar.mat)
+%                      1 = heterogeneous category sizes, 25-75 firms
+%                          (i_data_hetsize.mat; Appendix C.1)
+%                      2 = heterogeneous homogeneity: categories differ in their
+%                          number of essential inputs (i_data_hethom.mat; Appendix C.1)
 %
 % =========================================================================
 % PRODUCTIVITY FORMULA (eq. 12 of the paper, as implemented here)
@@ -102,9 +108,16 @@ function generateSimulationFiles(t_s, index_targeting, index_innovation, ...
 % =========================================================================
 % OUTPUT
 % =========================================================================
-%   A .mat file named
-%     "sim_<index_targeting>_<index_innovation>_<t_s>.mat"      if index_nc = 1 (INC)
-%     "sim_fnc_<index_targeting>_<index_innovation>_<t_s>.mat"  if index_nc = 0 (FNC)
+%   A .mat file named <prefix>_<index_targeting>_<index_innovation>_<t_s>.mat, where
+%   <prefix> depends on the initial network and the regime:
+%                       INC (index_nc = 1)   FNC (index_nc = 0)
+%     index_init = 0    sim                  sim_fnc
+%     index_init = 1    simHetSize           simHetSize_fnc
+%     index_init = 2    simHetHom            simHetHom_fnc
+%   Sensitivity simulations with the baseline network get their own prefix, so that
+%   they can be stored in the same folder as the heterogeneous-network simulations:
+%     lambda_1 > 0.004 (stronger spillovers, Appendix C.2)          : simHighSpill
+%     lambda_0_new < lambda_0 (disadvantaged new firms, Appendix C.3) : simDisadv
 %   containing the following variables. Most of them are cell arrays with T+1 cells:
 %   cell 1 = initial economy, cell t+1 = economy at the end of period t.
 %     s_W              : weight matrix W (share of a firm's input spending on each
@@ -151,15 +164,18 @@ function generateSimulationFiles(t_s, index_targeting, index_innovation, ...
 %     row 12: mean log-productivity of its essential suppliers (period t-1 values)
 %     row 13: number of optional inputs available in the target category
 
-% If index_nc is not given, use the increasing number of categories (INC), so that
-% older calls with only 9 inputs behave exactly as before.
+% Optional inputs: by default, the increasing number of categories (INC) and the
+% baseline initial network are used.
 if nargin < 10 || isempty(index_nc), index_nc = 1; end
 if ~ismember(index_nc, [0 1]), error('index_nc must be 0 or 1.'); end
+if nargin < 11 || isempty(index_init), index_init = 0; end
+if ~ismember(index_init, [0 1 2]), error('index_init must be 0, 1 or 2.'); end
 
 %% ------------------------------------------------------------------------
 %% 1. LOAD THE INITIAL NETWORK AND PARAMETERS
 %% ------------------------------------------------------------------------
-data = load("i_data_ar.mat");
+initFiles = ["i_data_ar.mat", "i_data_hetsize.mat", "i_data_hethom.mat"];
+data = load(initFiles(index_init+1));
 
 A               = data.A;               % who buys from whom: A(i,j)=1 if firm i buys from firm j
 W               = data.W;               % spending shares: each row of A divided by its sum, so a firm
@@ -695,14 +711,15 @@ end
 %% ------------------------------------------------------------------------
 %% 5. WRITE THE RESULTS TO A FILE
 %% ------------------------------------------------------------------------
-% The file name tells the regime (INC or FNC), the targeting rule, the innovation
-% scenario and the run number, so that different simulations do not overwrite
-% each other.
-if index_nc == 1
-    filename = sprintf("sim_%d_%d_%d.mat", index_targeting, index_innovation, t_s);
-else
-    filename = sprintf("sim_fnc_%d_%d_%d.mat", index_targeting, index_innovation, t_s);
-end
+% The file name tells the initial network, the regime (INC or FNC), the targeting
+% rule, the innovation scenario and the run number, so that different simulations
+% do not overwrite each other.
+prefixes = ["sim", "simHetSize", "simHetHom"];
+prefix = prefixes(index_init+1);
+if index_init == 0 && lambda_1 > 0.004,      prefix = "simHighSpill"; end   % Appendix C.2
+if index_init == 0 && lambda_0_new < lambda_0, prefix = "simDisadv";    end   % Appendix C.3
+if index_nc == 0, prefix = prefix + "_fnc"; end
+filename = sprintf("%s_%d_%d_%d.mat", prefix, index_targeting, index_innovation, t_s);
 
 if index_save == 0
     % without the weight matrices (smaller files)
